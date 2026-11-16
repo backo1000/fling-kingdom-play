@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fling Kingdom: pick the sounds</title>
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;font-family:Silkscreen,monospace}
+body{margin:0;background:#1a1030;color:#fff8e6;padding:14px 12px 120px}
+h1{font-size:20px;color:#ffd23a;margin:4px 0 6px}
+p{font-size:12px;line-height:1.5;margin:6px 0}
+.s{background:#2c1d52;border:3px solid #4a3a86;margin:10px 0;padding:10px}
+.s b{font-size:15px;color:#ffd23a}
+.s small{display:block;font-size:10px;color:#c8bde8;margin:3px 0 8px}
+.row{display:flex;flex-wrap:wrap;gap:6px}
+button{font-size:13px;padding:9px 10px;border:3px solid #1a1030;background:#6ad04a;color:#1a1030;font-weight:700}
+button.play{background:#7fe0ff}
+button.k{background:#3a2a6a;color:#fff8e6}
+button.k.on{background:#ffd23a;color:#1a1030}
+button.redo.on{background:#ea4a3c;color:#fff}
+#bar{position:fixed;left:0;right:0;bottom:0;background:#0f0820;border-top:3px solid #ffd23a;padding:10px 12px}
+#out{width:100%;height:46px;font-size:10px;margin-top:6px}
+</style></head><body>
+<h1>PICK THE SOUNDS</h1>
+<p>Tap PLAY to hear each version. Tap KEEP on the ones you like (keep more than one if they are both good: the game picks one at random each time). Tap REDO if none are any good. Then press MAKE MY CODE and send Claude the code.</p>
+<div id="list"></div>
+<div id="bar"><button id="mk">MAKE MY CODE</button> <button id="cp" class="k">COPY</button><textarea id="out" readonly placeholder="your code appears here"></textarea></div>
+<script>
+const S = [
+ ['cow',3,'ammo: cow'],['sheep',2,'ammo: sheep'],['anvil',2,'ammo: anvil'],['pig',2,'ammo: pig'],['grandma',2,'ammo: grandma'],['outhouse',2,'ammo: outhouse'],['pub',2,'ammo: barrel'],['bell',2,'ammo: bell'],
+ ['cake',2,'ammo: cake'],['goose',2,'ammo: goose'],['cactus',1,'ammo: cactus'],['snowman',1,'ammo: snowman'],['egg',1,'ammo: egg'],['balloon',1,'ammo: balloon'],['octopus',1,'ammo: octopus'],['cheese',1,'ammo: cheese'],
+ ['turnip',2,'farm: turnip'],['pegg',1,'farm: egg'],['hen',2,'farm: cross chicken'],['sling',2,'farm: slingshot'],['goatbutt',1,'farm: goat headbutt'],['croak',1,'frog'],
+ ['whoosh',3,'a throw'],['bonk',3,'a hit'],['crit',2,'critical hit'],['tink',2,'small tink'],['fall',2,'castle falls'],['crumble',2,'a chunk breaks off'],['cheer',2,'crowd cheer'],['ooh',1,'crowd ooh'],
+ ['tap',2,'button tap'],['buy',2,'buying'],['coin',3,'coin'],['knight',2,'knight / reward'],['magic',2,'sparkle'],['fanfare',1,'fanfare'],['levelup',1,'level up'],['chest',1,'chest opens'],['achieve',1,'secret found'],
+ ['record',1,'new record'],['page',1,'comic page'],['gcow',1,'golden cow'],['lobwarn',1,'lord throws something'],['swat',2,'you swat it'],['splat',2,'it splats you'],['petback',1,'pet comes home'],['rushgo',1,'boss rush start'],
+ ['tick',1,'clock tick'],['thunder',1,'thunder'],['rain',1,'rain (loop)'],['wind',1,'wind (loop)'],['honk',1,'goose honk'],['heehaw',1,'donkey'],['coo',1,'pigeon'],
+ ['ghostwail',2,'Hollow: the Wailing Ghost thrown'],['ghostphase',2,'Hollow: ghost through a wall'],['ghostboo',3,'Hollow: ghost boo'],['seethru',2,'Hollow: castle goes see-through'],['tapboo',2,'Hollow: tap to BOO'],['headpop',1,'Hollow: Duke head pops off'],['headbonk',1,'Hollow: head bonked back on'],['dukearrive',2,'Hollow: the Duke arrives'],['spooked',1,'Hollow: the SPOOKED strip']];
+const pick = {}; let cur = null;
+const L = document.getElementById('list');
+for(const [n, c, d] of S){ pick[n] = {}; const el = document.createElement('div'); el.className = 's';
+  let h = `<b>${n.toUpperCase()}</b><small>${d}</small><div class="row">`;
+  for(let k = 1; k <= c; k++) h += `<button class="play" data-p="${n}_${k}">PLAY ${k}</button><button class="k" data-k="${n}" data-n="${k}">KEEP ${k}</button>`;
+  h += `<button class="k redo" data-r="${n}">REDO</button></div>`; el.innerHTML = h; L.appendChild(el); }
+L.addEventListener('click', e=>{ const b = e.target.closest('button'); if(!b) return;
+  if(b.dataset.p){ if(cur){ cur.pause(); } cur = new Audio('sfx/' + b.dataset.p + '.mp3'); cur.play(); }
+  if(b.dataset.k){ const n = b.dataset.k, k = b.dataset.n; pick[n][k] = !pick[n][k]; b.classList.toggle('on', pick[n][k]); if(pick[n][k]){ pick[n].redo = false; b.parentNode.querySelector('.redo').classList.remove('on'); } }
+  if(b.dataset.r){ const n = b.dataset.r; pick[n] = {redo: !pick[n].redo}; b.parentNode.querySelectorAll('.k').forEach(x=> x.classList.remove('on')); b.classList.toggle('on', pick[n].redo); } });
+document.getElementById('mk').onclick = ()=>{ const parts = [];
+  for(const [n] of S){ const p = pick[n]; if(p.redo) parts.push(n + ':R'); else { const ks = Object.keys(p).filter(k=> k !== 'redo' && p[k]); if(ks.length) parts.push(n + ':' + ks.join('')); } }
+  document.getElementById('out').value = 'SFX ' + parts.join(' '); };
+document.getElementById('cp').onclick = ()=>{ const o = document.getElementById('out'); o.select(); try { navigator.clipboard.writeText(o.value); } catch(e){ document.execCommand('copy'); } };
+</script></body></html>

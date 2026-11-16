@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Kingdom Watch</title>
+<!-- Kingdom Watch (15 Nov 2026): Billy's live view of the testers. Reads the fk_watch function in the Supabase project fling-kingdom,
+     which only answers with the watch key (in the link after #k=). The game sends the rows: block "KINGDOM WATCH" in index.html. -->
+<style>
+:root{
+  color-scheme: light;
+  --bg:#f3f1ec; --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#8a8984; --grid:#e4e2dc; --line:#d6d4cc;
+  --plan:#9a988f; --live:#1f9d55; --seq:#2a78d6;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300; --s7:#6250d6; --s8:#e34948;
+}
+@media (prefers-color-scheme: dark){
+  :root:where(:not([data-theme="light"])){
+    color-scheme: dark;
+    --bg:#121211; --surface:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --muted:#8f8e86; --grid:#2c2c2a; --line:#3a3a37;
+    --plan:#8a887f; --live:#3fbf74; --seq:#3987e5;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:1100px;margin:0 auto;padding:16px}
+h1{font-size:22px;margin:4px 0 2px}
+h2{font-size:16px;margin:0 0 4px}
+.sub{color:var(--ink2);font-size:13px;margin:0 0 12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;margin:0 0 14px}
+.note{color:var(--muted);font-size:12px;margin:2px 0 8px}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.top .live{color:var(--ink2);font-size:13px}
+button{font:inherit;font-size:13px;padding:5px 10px;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+button:hover{border-color:var(--ink2)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th{text-align:left;color:var(--ink2);font-weight:600;font-size:12px;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:7px 8px;border-bottom:1px solid var(--grid);vertical-align:middle}
+td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.who{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.sw{width:10px;height:10px;border-radius:3px;flex:none}
+.dot{width:9px;height:9px;border-radius:50%;flex:none;background:var(--line)}
+.dot.on{background:var(--live);box-shadow:0 0 0 3px color-mix(in srgb,var(--live) 25%,transparent)}
+.name{cursor:pointer;border-bottom:1px dashed var(--muted)}
+.me{font-size:10px;font-weight:700;letter-spacing:.05em;color:var(--surface);background:var(--ink);border-radius:4px;padding:1px 5px}
+.tablewrap{overflow-x:auto}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--ink2);margin:4px 0 6px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px}
+svg{display:block;width:100%;height:auto;overflow:visible}
+svg text{fill:var(--ink2);font-size:11px;font-family:inherit}
+.tip{position:fixed;pointer-events:none;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-size:12px;box-shadow:0 4px 14px rgba(0,0,0,.15);display:none;z-index:9;max-width:260px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:760px){.grid2{grid-template-columns:1fr}main{padding:10px}}
+#gate input{width:100%;font:inherit;padding:8px;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--ink);margin:8px 0}
+.err{color:#c0392b;font-size:13px}
+</style>
+</head>
+<body>
+<main>
+  <div class="top">
+    <div><h1>Kingdom Watch</h1><p class="sub">Your Fling Kingdom testers, live. Updates every minute.</p></div>
+    <div class="live" id="stamp">Loading...</div>
+  </div>
+
+  <div class="card" id="gate" hidden>
+    <h2>Paste your watch link</h2>
+    <p class="note">Open the private link Claude gave you, or paste it (or just the key) here. This phone or computer remembers it.</p>
+    <input id="gatein" placeholder="https://.../watch.html#k=...">
+    <button id="gatego">Open</button> <span class="err" id="gateerr"></span>
+  </div>
+
+  <div id="app" hidden>
+    <div class="card">
+      <h2>Players</h2>
+      <p class="note">Green dot = playing in the last 4 minutes. YOU = the kingdom on this phone (open this page on the phone you play on). Tap a name to rename them (only on this device). Play time only counts from 15 Nov, when watching began.</p>
+      <div class="tablewrap"><table id="players"></table></div>
+    </div>
+
+    <div class="card">
+      <h2>Progress against the plan</h2>
+      <p class="note">Up = further through the regions. Along = hours played (spread out at the start so the early hours show). The grey dashed line is the planned pace from the balance bot. Each line begins on the plan where we first saw that player, so above the plan = faster than planned.</p>
+      <div class="legend" id="leg1"></div>
+      <div id="chart1"></div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h2>Where they are</h2>
+        <p class="note">Furthest region each player has opened. Where the bars stop is where people get stuck.</p>
+        <div id="chart2"></div>
+      </div>
+      <div class="card">
+        <h2>Play time per day</h2>
+        <p class="note">Minutes with the game on screen, last 14 days.</p>
+        <div class="legend" id="leg3"></div>
+        <div id="chart3"></div>
+      </div>
+    </div>
+  </div>
+</main>
+<div class="tip" id="tip"></div>
+<script>
+const URL_ = 'https://xggxejbfgpckvrtrrzuo.supabase.co', KEY = 'sb_publishable_PFzIc6aYMgRoB_oVqV__cQ_j_6DDyW7';
+const REGIONS = ['The Meadows','The Bog','The Dustlands','Frostpeaks','The Volcano','Sky Islands','Under the Sea','The Moon'];
+/* the balance bot's hour each region opens (HANDOVER, 15 Nov: bot 2400 h). Region index -> hour */
+const PLAN = [[0,0],[1,5],[2,30.5],[3,72],[4,133],[5,240],[6,418],[7,675],[8,1426]];
+const SERIES = ['--s1','--s2','--s3','--s4','--s5','--s6','--s7','--s8'];
+const $ = id => document.getElementById(id);
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+let watchKey = '';
+(function(){ const m = location.hash.match(/k=([0-9a-f]{20,})/i);
+  if(m){ watchKey = m[1]; try { localStorage.setItem('fkWatchKey', watchKey); } catch(e){} history.replaceState(null, '', location.pathname); }
+  else { try { watchKey = localStorage.getItem('fkWatchKey') || ''; } catch(e){} } })();
+
+/* which player is this phone's: the game keeps its online sign-in under a key ending in Cloud on the same website */
+function myIds(){ const out = []; try { for(let i = 0; i < localStorage.length; i++){ const k = localStorage.key(i); if(!/Cloud$/.test(k)) continue;
+  const o = JSON.parse(localStorage.getItem(k) || '{}'); if(o && o.uid) out.push(o.uid); } } catch(e){} return out; }
+function names(){ try { return JSON.parse(localStorage.getItem('fkWatchNames') || '{}'); } catch(e){ return {}; } }
+function setName(id, n){ const o = names(); if(n) o[id] = n; else delete o[id]; try { localStorage.setItem('fkWatchNames', JSON.stringify(o)); } catch(e){} }
+
+async function rpc(fn, body){ const r = await fetch(URL_ + '/rest/v1/rpc/' + fn, {method:'POST', headers:{apikey: KEY, 'Content-Type':'application/json'}, body: JSON.stringify(body), cache:'no-store'});
+  if(!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }
+
+/* progress from best (region*10 + castle): 0 = Meadows castle 1, 8 = past the Moon */
+function prog(best){ best = +best || 0; if(best < 1) return 0; const r = Math.floor((best - 1)/10), c = best - r*10; return Math.min(8, r + (c - 1)/10); }
+function planHour(p){ for(let i = 1; i < PLAN.length; i++){ const [p1,h1] = PLAN[i], [p0,h0] = PLAN[i-1]; if(p <= p1) return h0 + (h1 - h0)*(p - p0)/(p1 - p0); } return PLAN[PLAN.length-1][1]; }
+function ago(t){ const s = Math.max(0, (Date.now() - t)/1000); if(s < 90) return 'just now'; if(s < 3600) return Math.round(s/60) + ' min ago'; if(s < 86400*2) return Math.round(s/3600) + ' h ago'; return Math.round(s/86400) + ' days ago'; }
+function hrs(m){ return m < 60 ? Math.round(m) + ' min' : (m/60).toFixed(m < 600 ? 1 : 0) + ' h'; }
+function dayKey(t){ const d = new Date(t); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+
+let DATA = null;
+function build(d){
+  const byId = {}; (d.players || []).forEach(p => { byId[p.id] = Object.assign({ev: []}, p); });
+  (d.events || []).forEach(([uid, at, kind, data]) => { const p = byId[uid] || (byId[uid] = {id: uid, ev: []}); p.ev.push({t: Date.parse(at), kind, d: data || {}}); });
+  let list = Object.values(byId).filter(p => p.ev.length || p.best != null);
+  list.sort((a, b) => Date.parse(a.first || 0) - Date.parse(b.first || 0));
+  const nm = names();
+  list.forEach((p, i) => {
+    p.n = i; p.col = css(SERIES[i % SERIES.length]); p.me = myIds().includes(p.id); p.name = nm[p.id] || (p.me ? 'You (this phone)' : 'Player ' + (i + 1));
+    p.ev.sort((a, b) => a.t - b.t);
+    let mins = 0, today = 0, tk = dayKey(Date.now()); p.days = {}; p.pts = [];
+    const firstP = p.ev.length ? prog(p.ev[0].d.b) : prog(p.best), off = planHour(firstP);
+    p.ev.forEach(e => { const m = +e.d.m || 0; if(e.kind === 'beat' || e.kind === 'stop'){ mins += m; const k = dayKey(e.t); p.days[k] = (p.days[k] || 0) + m; if(k === tk) today += m; }
+      if(e.d.b != null) p.pts.push({h: off + mins/60, p: prog(e.d.b), t: e.t, d: e.d}); });
+    p.mins = mins; p.today = today;
+    p.lastT = p.ev.length ? p.ev[p.ev.length-1].t : Date.parse(p.save_at || 0);
+    p.live = p.ev.length && Date.now() - p.lastT < 4*60000 && p.ev[p.ev.length-1].kind !== 'stop';
+    const L = p.ev.length ? p.ev[p.ev.length-1].d : {}; p.cur = {b: L.b != null ? L.b : p.best, o: L.o != null ? L.o : p.open, g: L.g != null ? L.g : p.gEarned};
+  });
+  return list;
+}
+
+function render(){
+  const list = build(DATA);
+  $('stamp').textContent = 'Updated ' + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) + ' · ' + list.filter(p => p.live).length + ' playing now';
+  /* players */
+  const rows = list.slice().sort((a, b) => (b.live - a.live) || (b.lastT - a.lastT));
+  $('players').innerHTML = '<tr><th>Player</th><th>Where</th><th class="num">Played</th><th class="num">Today</th><th class="num">Grudge earned</th><th>Last seen</th><th></th></tr>' +
+    (rows.length ? rows.map(p => { const b = +p.cur.b || 0, r = b ? Math.floor((b - 1)/10) : 0, c = b ? b - r*10 : 0;
+      return `<tr><td><div class="who"><span class="dot${p.live ? ' on' : ''}"></span><span class="sw" style="background:${p.col}"></span><span class="name" data-id="${p.id}">${esc(p.name)}</span>${p.me ? '<span class="me">YOU</span>' : ''}</div></td>
+        <td>${b ? esc(REGIONS[r] || '?') + ', castle ' + c : 'not started'}</td><td class="num">${hrs(p.mins)}</td><td class="num">${hrs(p.today)}</td>
+        <td class="num">${(+p.cur.g || 0).toLocaleString()}</td><td>${p.lastT ? ago(p.lastT) : '-'}</td>
+        <td><button data-save="${p.id}">Save code</button></td></tr>`; }).join('') : '<tr><td colspan="7" class="note">Nobody yet. Testers show up once they open the new build.</td></tr>');
+  chart1(list); chart2(list); chart3(list);
+}
+
+/* tooltip */
+const tip = $('tip');
+function showTip(e, html){ tip.innerHTML = html; tip.style.display = 'block'; const x = Math.min(innerWidth - tip.offsetWidth - 8, e.clientX + 12), y = Math.max(8, e.clientY - tip.offsetHeight - 10); tip.style.left = x + 'px'; tip.style.top = y + 'px'; }
+document.addEventListener('pointermove', e => { const t = e.target.closest('[data-tip]'); if(t) showTip(e, t.getAttribute('data-tip')); else tip.style.display = 'none'; });
+
+function chart1(list){
+  const W = 900, H = 340, L = 110, R = 16, T = 10, B = 34, maxH = Math.max(40, ...list.flatMap(p => p.pts.map(q => q.h))) * 1.15;
+  const xs = h => L + (W - L - R) * Math.sqrt(h) / Math.sqrt(maxH), ys = p => T + (H - T - B) * (1 - p/8);
+  let g = '';
+  for(let i = 0; i <= 8; i++){ g += `<line x1="${L}" x2="${W-R}" y1="${ys(i)}" y2="${ys(i)}" stroke="var(--grid)"/>`; if(i < 8) g += `<text x="${L-8}" y="${ys(i+0.5)+4}" text-anchor="end">${esc(REGIONS[i])}</text>`; }
+  [0,1,5,10,25,50,100,250,500,1000,2000].filter(h => h <= maxH).forEach(h => { g += `<line x1="${xs(h)}" x2="${xs(h)}" y1="${H-B}" y2="${H-B+4}" stroke="var(--muted)"/><text x="${xs(h)}" y="${H-B+16}" text-anchor="middle">${h} h</text>`; });
+  g += `<line x1="${L}" x2="${W-R}" y1="${H-B}" y2="${H-B}" stroke="var(--line)"/>`;
+  /* plan */
+  const pl = []; for(let p = 0; p <= 8; p += 0.05){ const h = planHour(p); if(h > maxH) break; pl.push(xs(h).toFixed(1) + ',' + ys(p).toFixed(1)); }
+  g += `<polyline points="${pl.join(' ')}" fill="none" stroke="var(--plan)" stroke-width="2" stroke-dasharray="5 4"/>`;
+  list.forEach(p => { if(!p.pts.length) return; const pts = p.pts.map(q => xs(q.h).toFixed(1) + ',' + ys(q.p).toFixed(1));
+    g += `<polyline points="${pts.join(' ')}" fill="none" stroke="${p.col}" stroke-width="2" stroke-linejoin="round"/>`;
+    const q = p.pts[p.pts.length-1], diff = q.h - planHour(q.p);
+    const say = `<b>${esc(p.name)}</b><br>${esc(REGIONS[Math.min(7, Math.floor(q.p))])}, castle ${Math.round((q.p % 1)*10) + 1}<br>${diff <= 0 ? Math.abs(diff).toFixed(1) + ' h ahead of plan' : diff.toFixed(1) + ' h behind plan'}`;
+    g += `<circle cx="${xs(q.h)}" cy="${ys(q.p)}" r="5" fill="${p.col}" stroke="var(--surface)" stroke-width="2"/><circle cx="${xs(q.h)}" cy="${ys(q.p)}" r="14" fill="transparent" data-tip="${esc(say)}"/>`; });
+  $('chart1').innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Progress against the plan">${g}</svg>`;
+  $('leg1').innerHTML = `<span><i style="background:repeating-linear-gradient(90deg,var(--plan) 0 5px,transparent 5px 9px)"></i>Plan</span>` + list.filter(p => p.pts.length).map(p => `<span><i style="background:${p.col}"></i>${esc(p.name)}</span>`).join('');
+}
+
+function chart2(list){
+  const cnt = REGIONS.map(() => []); list.forEach(p => { const o = Math.min(7, +p.cur.o || 0); cnt[o].push(p.name); });
+  const W = 440, row = 30, L = 110, R = 30, H = row*REGIONS.length + 6, max = Math.max(1, ...cnt.map(c => c.length));
+  let g = '';
+  REGIONS.forEach((r, i) => { const y = 3 + i*row, w = (W - L - R) * cnt[i].length / max;
+    g += `<text x="${L-8}" y="${y+row/2+4}" text-anchor="end">${esc(r)}</text>`;
+    if(cnt[i].length) g += `<rect x="${L}" y="${y+5}" width="${Math.max(4,w)}" height="${row-10}" rx="4" fill="var(--seq)" data-tip="${esc('<b>' + r + '</b><br>' + cnt[i].join(', '))}"/><text x="${L+Math.max(4,w)+6}" y="${y+row/2+4}">${cnt[i].length}</text>`; });
+  $('chart2').innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Furthest region per player">${g}</svg>`;
+}
+
+function chart3(list){
+  const days = []; for(let i = 13; i >= 0; i--) days.push(dayKey(Date.now() - i*86400000));
+  const W = 440, H = 220, L = 40, R = 6, T = 8, B = 26, tot = days.map(k => list.reduce((s, p) => s + (p.days[k] || 0), 0)), max = Math.max(30, ...tot) * 1.1;
+  const bw = (W - L - R)/days.length, ys = m => T + (H - T - B) * (1 - m/max);
+  let g = ''; const step = max > 600 ? 120 : max > 240 ? 60 : 30;
+  for(let m = 0; m <= max; m += step){ g += `<line x1="${L}" x2="${W-R}" y1="${ys(m)}" y2="${ys(m)}" stroke="var(--grid)"/><text x="${L-6}" y="${ys(m)+4}" text-anchor="end">${m >= 60 ? (m/60) + 'h' : m + 'm'}</text>`; }
+  days.forEach((k, i) => { let base = 0; const x = L + i*bw + 3, w = bw - 6;
+    list.forEach(p => { const m = p.days[k] || 0; if(m <= 0) return; const y0 = ys(base), y1 = ys(base + m), h = Math.max(1, y0 - y1 - 2);
+      g += `<rect x="${x}" y="${y1}" width="${w}" height="${h}" rx="2" fill="${p.col}" data-tip="${esc('<b>' + p.name + '</b><br>' + k + ': ' + hrs(m))}"/>`; base += m; });
+    if(i % 2 === 1 || days.length < 8) g += `<text x="${x + w/2}" y="${H-B+14}" text-anchor="middle">${k.slice(8)}/${k.slice(5,7)}</text>`; });
+  g += `<line x1="${L}" x2="${W-R}" y1="${H-B}" y2="${H-B}" stroke="var(--line)"/>`;
+  $('chart3').innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Play time per day">${g}</svg>`;
+  $('leg3').innerHTML = list.filter(p => Object.keys(p.days).length).map(p => `<span><i style="background:${p.col};height:10px;width:10px"></i>${esc(p.name)}</span>`).join('');
+}
+
+document.addEventListener('click', async e => {
+  const n = e.target.closest('.name'); if(n){ const v = prompt('Name for this player (blank to reset):', n.textContent); if(v !== null){ setName(n.dataset.id, v.trim()); render(); } return; }
+  const s = e.target.closest('[data-save]'); if(s){ s.textContent = 'Fetching...';
+    try { const data = await rpc('fk_watch_save', {k: watchKey, uid: s.dataset.save}); if(!data){ s.textContent = 'No save yet'; return; }
+      const code = 'FK1:' + btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+      try { await navigator.clipboard.writeText(code); s.textContent = 'Copied!'; } catch(err){ prompt('Copy this save code:', code); s.textContent = 'Save code'; }
+      setTimeout(() => { s.textContent = 'Save code'; }, 2500); }
+    catch(err){ s.textContent = 'Failed'; } }
+});
+
+async function load(){
+  try { const d = await rpc('fk_watch', {k: watchKey}); if(!d){ throw new Error('key'); }
+    DATA = d; $('gate').hidden = true; $('app').hidden = false; render(); }
+  catch(err){ if(String(err.message) === 'key'){ try { localStorage.removeItem('fkWatchKey'); } catch(e){} watchKey = ''; $('app').hidden = true; $('gate').hidden = false; $('gateerr').textContent = 'That link did not work.'; $('stamp').textContent = ''; }
+    else $('stamp').textContent = 'No signal: trying again in a minute'; }
+}
+$('gatego').onclick = () => { const v = $('gatein').value.trim(), m = v.match(/([0-9a-f]{40,})/i); if(!m){ $('gateerr').textContent = 'That does not look like a watch link.'; return; }
+  watchKey = m[1]; try { localStorage.setItem('fkWatchKey', watchKey); } catch(e){} $('gateerr').textContent = ''; load(); };
+if(watchKey) load(); else { $('gate').hidden = false; $('stamp').textContent = ''; }
+setInterval(() => { if(watchKey && !document.hidden) load(); }, 60000);
+document.addEventListener('visibilitychange', () => { if(!document.hidden && watchKey) load(); });
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if(DATA) render(); });
+</script>
+</body>
+</html>

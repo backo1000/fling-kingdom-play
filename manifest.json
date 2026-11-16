@@ -1,0 +1,25 @@
+{
+  "name": "Fling Kingdom",
+  "short_name": "Fling Kingdom",
+  "description": "Cows. Castles. A very old grudge.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#1a1030",
+  "theme_color": "#2a1f45",
+  "icons": [
+    {
+      "src": "icon-any-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-any-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
